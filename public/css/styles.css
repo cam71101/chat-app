@@ -37,6 +37,18 @@ input {
     outline: none;
 }
 
+select{
+    padding: 12px;
+    color: #777;
+    border: 1px solid #eee;
+    outline: none;
+    margin-bottom: 20px;
+    background: white;
+    font-size: 14px;
+    width: 100%;
+    -webkit-appearance: none;
+}
+
 button {
     cursor: pointer;
     padding: 12px;

@@ -1,64 +1,108 @@
 const socket = io()
 
-const messageForm = document.querySelector('#message-form')
-const messageFormInput = messageForm.querySelector('input')
-const messageFormButton = messageForm.querySelector('button') 
-const locationButton = document.querySelector('#send-location')
-const messages = document.querySelector('#messages')
+// elements
+const $messageForm = document.querySelector('#message-form')
+const $messageFormInput = document.querySelector('input')
+const $messageFormButton= document.querySelector('button')
+const $sendLocationButton = document.querySelector('#send-location')
+const $messages = document.querySelector('#messages')
 
-//Tempaltes
+// templates
 const messageTemplate = document.querySelector('#message-template').innerHTML
 const locationTemplate = document.querySelector('#location-message-template').innerHTML
 const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
-// Options
-const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
+//options
+let { username, createRoom, joinRoom } = Qs.parse(location.search, { ignoreQueryPrefix: true })
 
-const autoscroll = () => {  
-    // New message element
-    const $newMessage = messages.lastElementChild
+// check joining choice
+const roomCheck = () =>{
 
-    //Height of the last message
-    const newMessageStyles = getComputedStyle($newMessage)
-    const newMessageMargin = parseInt(newMessageStyles.marginBottom)
-    const newMessageHeight = $newMessage.offsetHeight + newMessageMargin
+    createRoom = createRoom.trim().toLowerCase()
+    joinRoom = joinRoom.trim().toLowerCase()
+    
+    // if createroom and joinRoom are true
 
-    // visible height
-    const visibleHeight = messages.offsetHeight
-
-    // Height of messages container
-    const containerHeight = messages.scrollHeight
-
-    // How far have I scrolled?
-    const scrollOffset = messages.scrollTop + visibleHeight
-
-    if (containerHeight - newMessageHeight <= scrollOffset) {
-        messages.scrollTop = messages.scrollHeight
+    if(createRoom && joinRoom && createRoom !== joinRoom) {
+        alert("Create a room OR select an existing one")
+        // socket.emit('removeRoom', createRoom)
+        location.href = 'http://localhost:3000'
+        createRoom = undefined
     }
-   
+
+    // if createroom and joinroom are equal, ignore the following the code 
+    // console.log(createRoom)
+    // console.log(joinRoom)
+    
+    // return createRoom if true otherwise return return joinRoom
+    return createRoom ? createRoom : joinRoom
 }
 
+const room = roomCheck()
+// console.log('room', room);
+
+
+const autoscroll = () => {
+    /*
+        scrollHeight: total container size.
+        scrollTop: amount of scroll user has done.
+        clientHeight: amount of container a user sees.
+    */
+
+    // new message element
+    const $newMessage = $messages.lastElementChild
+
+    // height of $newMessage margins
+    const newMessageStyles = getComputedStyle($newMessage)
+    const newMessageMargin = parseInt(newMessageStyles.marginBottom)
+
+    // height of $newMessage without margins
+    let newMessageHeight = $newMessage.offsetHeight
+
+    // total height of $newMessage
+    newMessageHeight += newMessageMargin
+
+    // visible height
+    const visibleHeight = $messages.offsetHeight
+
+    // total height of messages container 
+    // scrollHeight 
+    const containerHeight = $messages.scrollHeight
+
+    // how far have we scrolled
+    const scrollOfset = $messages.scrollTop + visibleHeight 
+
+    // containerHeight - newMessageHeight <= scrollOfset => 
+    
+    if(containerHeight - newMessageHeight <= scrollOfset){
+        $messages.scrollTop = $messages.scrollHeight
+    }
+}
+
+// messages
 socket.on('message', (message) => {
     const html = Mustache.render(messageTemplate, {
-        username: message.username,
         message: message.text,
-        createdAt: moment(message.createdAt).format('h:mm a')
+        createdAt: moment(message.createdAt).format('h:mm a'),
+        username: message.username
     })
-    messages.insertAdjacentHTML('beforeend', html)
+    $messages.insertAdjacentHTML('beforeend', html)
     autoscroll()
 })
 
+// location message
 socket.on('locationMessage', (message) => {
     const html = Mustache.render(locationTemplate, {
-        username: message.username,
         url: message.url,
-        createdAt: moment(message.createdAt).format('h:mm a')
+        createdAt: moment(message.createdAt).format('h:mm a'),
+        username: message.username
     })
-    messages.insertAdjacentHTML('beforeend', html)
+    $messages.insertAdjacentHTML('beforeend', html)
     autoscroll()
 })
 
-socket.on('roomData', ({ room, users}) => {
+// users' list in sidebar
+socket.on('roomData', ({ room, users }) => {
     const html = Mustache.render(sidebarTemplate, {
         room,
         users
@@ -66,51 +110,52 @@ socket.on('roomData', ({ room, users}) => {
     document.querySelector('#sidebar').innerHTML = html
 })
 
-
-
-messageForm.addEventListener('submit', (e) => {
+$messageForm.addEventListener('submit', (e) => {
     e.preventDefault()
-
-    messageFormButton.setAttribute('disabled', 'disabled')
-
     const message = e.target.elements.message.value
-    
-    socket.emit('sendMessage', message, (error) => {
-        messageFormButton.removeAttribute('disabled')
-        messageFormInput.value = ''
-        messageFormInput.focus()
-       
-        if (error) {
+
+    // disable the form
+    $messageFormButton.setAttribute('disabled', 'disabled')
+
+    socket.emit("sendMessage", message, (error) => {
+        // enable the form
+        $messageFormButton.removeAttribute('disabled')
+        $messageFormInput.value = ''
+        $messageFormInput.focus()
+        
+        if(error){
             return console.log(error)
         }
-
-        console.log('Message delivered!')
+        console.log('Message delivered')
     })
 })
 
-locationButton.addEventListener('click', () =>{
-
-    if (!navigator.geolocation) {
-        return alert('Geolocation is not supported by your browser.')
+// geoLocation
+$sendLocationButton.addEventListener('click', (e) => {
+    // Si browser trop vieux, geolocation n'est pas dispo
+    if(!navigator.geolocation){
+        return alert('Geolocation not supported by your browser.')
     }
+    // disable the button
+    $sendLocationButton.setAttribute('disabled', 'disabled')
 
-    locationButton.setAttribute('disabled', 'disabled')
-
-    navigator.geolocation.getCurrentPosition((position) => {
-        socket.emit('sendLocation', {
+    navigator.geolocation.getCurrentPosition( position => {
+        coords = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
-        }, () => {
-            locationButton.removeAttribute('disabled')
+        }
+        
+        socket.emit('sendLocation', coords, () => {
+            $sendLocationButton.removeAttribute('disabled')
             console.log('Location shared!')
         })
     })
 })
 
+// while joinin the chat
 socket.emit('join', { username, room }, (error) => {
-    if (error) {
+    if(error){
         alert(error)
         location.href = '/'
     }
 })
-

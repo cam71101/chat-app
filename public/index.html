@@ -1,22 +1,39 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>Chat App</title>
-        <link rel="icon" href="/img/favicon.png">
-        <link rel="stylesheet" href="/css/styles.min.css">
-    </head>
-    <body>
-        <div class="centered-form">
-            <div class="centered-form__box">
-                <h1>Join</h1>
-                <form action="/chat.html">
-                    <label>Display name</label>
-                    <input type="text" name="username" placeholder="Display name" required>
-                    <label>Room</label>
-                    <input type="text" name="room" placeholder="Room" required>
-                    <button>Join</button>
-                </form>
-            </div>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="shortcut icon" href="/img/favicon.png" type="image/x-icon">
+    <title>Chat App</title>
+</head>
+<body>
+    <div class="centered-form">
+        <div class="centered-form__box">
+            <h1>Join</h1>
+            <form action="/chat.html">
+                <label for="">Display name</label>
+                <input type="text" name="username" placeholder="Display name" required >
+                <label for="">Create a room</label>
+                <input type="text" name="createRoom" placeholder="Room">
+                <label for="">Or</label>
+                <select name="joinRoom" id="rooms">
+                    <option value="">Select an existing room</option>
+                </select>
+                <button type="submit">Join</button>
+            </form>
         </div>
-    </body>
+    </div>
+
+    <!-- Template rooms -->
+    <script id="roomsTemplate" type="text/html">
+        {{#rooms}}
+            <option value="{{.}}">{{.}}</option>
+        {{/rooms}}
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/3.0.1/mustache.min.js"></script>
+    <script src="socket.io/socket.io.js"></script>
+    <script src="/js/index.js"></script>
+</body>
 </html>

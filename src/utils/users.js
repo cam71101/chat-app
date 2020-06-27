@@ -1,6 +1,7 @@
 const users = []
 
 const addUser = ({ id, username, room }) => {
+
     // Clean the data
     username = username.trim().toLowerCase()
     room = room.trim().toLowerCase()
@@ -11,8 +12,6 @@ const addUser = ({ id, username, room }) => {
             error: 'Username and room are requried!'
         }
     }
-
-    console.log(users.room)
     
     // Check for exisitng user
     const existingUser = users.find((user) => {
@@ -41,7 +40,6 @@ const removeUser = (id) => {
 }
 
 
-
 const getUser = (id) => {
     return users.find((user) => user.id === id)
 }
@@ -49,6 +47,7 @@ const getUser = (id) => {
 const getUsersInRoom = (room) => {
     return users.filter((user) => user.room === room)
 }
+
 
 module.exports = {
     addUser,
